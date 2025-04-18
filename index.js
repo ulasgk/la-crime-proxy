@@ -9,37 +9,29 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/la-crime", async (req, res) => {
   try {
-    const url = "https://data.lacity.org/resource/2nrs-mtv8.json?$limit=10000&$order=date_occ DESC";
+    // Calculate date 30 days ago in ISO format
+    const now = new Date();
+    const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const isoDate = past30.toISOString();
+
+    // Fetch up to 50,000 records since that date
+    const url = `https://data.lacity.org/resource/2nrs-mtv8.json?$limit=50000&$where=date_occ > '${isoDate}'&$order=date_occ DESC`;
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log(`✅ Total records fetched: ${data.length}`);
+    // Categorize crime types
+    const categories = {};
+    for (const incident of data) {
+      const type = incident.crm_cd_desc || "UNKNOWN";
+      categories[type] = (categories[type] || 0) + 1;
+    }
 
-    const now = new Date();
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(now.getFullYear() - 1);
-
-    let validCount = 0;
-
-    data.forEach((item, idx) => {
-      const dateStr = item.date_occ || item.date_rptd;
-      if (!dateStr) return;
-
-      const crimeDate = new Date(dateStr);
-      if (isNaN(crimeDate)) return;
-
-      if (idx < 10) {
-        console.log(`📅 Record ${idx + 1}: ${dateStr} => ${crimeDate}`);
-      }
-
-      if (crimeDate >= oneYearAgo) validCount++;
+    res.json({
+      total: data.length,
+      categories: categories
     });
-
-    console.log(`📊 Total crimes in the last year: ${validCount}`);
-
-    res.json({ count: validCount });
   } catch (err) {
-    console.error("❌ Fetch or parse error:", err.message);
+    console.error("Fetch error:", err.message);
     res.status(500).json({ error: "Failed to fetch data." });
   }
 });
@@ -47,4 +39,5 @@ app.get("/la-crime", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚨 LA Crime Proxy running on port ${PORT}`);
 });
+
 
