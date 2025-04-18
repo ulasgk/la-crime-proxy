@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/la-crime", async (req, res) => {
   try {
-    const url = "https://data.lacity.org/resource/2nrs-mtv8.json?$limit=10000";
+    const url = "https://data.lacity.org/resource/2nrs-mtv8.json?$limit=10000&$order=date_occ DESC";
     const response = await fetch(url);
     const data = await response.json();
 
