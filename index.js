@@ -9,17 +9,20 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/la-crime", async (req, res) => {
   try {
-    // Calculate date 30 days ago in ISO format
     const today = new Date();
-    const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30)).toISOString();
+    const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
+    const isoDate = thirtyDaysAgo.toISOString(); // correct ISO format
 
-    // SoQL query: get recent crimes only
-    const url = `https://data.lacity.org/resource/2nrs-mtv8.json?$limit=50000&$order=date_occ DESC&$where=date_occ >= '${thirtyDaysAgo}'`;
+    // SoQL query with proper URL encoding
+    const baseUrl = "https://data.lacity.org/resource/2nrs-mtv8.json";
+    const query = `$limit=50000&$order=date_occ DESC&$where=date_occ >= '${isoDate}'`;
+    const url = `${baseUrl}?${encodeURI(query)}`;
 
     const response = await fetch(url);
     const data = await response.json();
 
     if (!Array.isArray(data)) {
+      console.error("DEBUG: Response not an array", data);
       throw new Error("Invalid data format");
     }
 
@@ -39,4 +42,3 @@ app.get("/la-crime", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚨 LA Crime Proxy running on port ${PORT}`);
 });
-
