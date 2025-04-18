@@ -5,11 +5,11 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.get("/la-crime", async (req, res) => {
   try {
-    const url = "https://data.lacity.org/resource/2nrs-mtv8.json?$limit=1000000";
+    const url = "https://data.lacity.org/resource/2nrs-mtv8.json?$limit=5000"; // TEMP: Lower limit
     const response = await fetch(url);
     const data = await response.json();
 
@@ -18,7 +18,9 @@ app.get("/la-crime", async (req, res) => {
     oneYearAgo.setFullYear(now.getFullYear() - 1);
 
     const filtered = data.filter(item => {
-      const date = new Date(item.date_occ || item.date_rptd);
+      const dateStr = item.date_occ || item.date_rptd;
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
       return date >= oneYearAgo;
     });
 
